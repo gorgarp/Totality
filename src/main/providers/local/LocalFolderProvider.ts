@@ -1544,6 +1544,10 @@ export class LocalFolderProvider implements MediaProvider {
     // Strategy 3: Original title without year (to get more results)
     {
       const response = await tmdb.searchMovie(originalTitle)
+      if (response.results?.length > 1) {
+        const aiMatch = await this.tryAIDisambiguation(originalTitle, year, response.results)
+        if (aiMatch) return aiMatch
+      }
       const match = findBestMatch(response.results, year)
       if (match) return match
     }
@@ -1551,6 +1555,10 @@ export class LocalFolderProvider implements MediaProvider {
     // Strategy 4: Normalized title without year
     if (normalizedTitle !== originalTitle) {
       const response = await tmdb.searchMovie(normalizedTitle)
+      if (response.results?.length > 1) {
+        const aiMatch = await this.tryAIDisambiguation(originalTitle, year, response.results)
+        if (aiMatch) return aiMatch
+      }
       const match = findBestMatch(response.results, year)
       if (match) return match
     }
@@ -1558,6 +1566,46 @@ export class LocalFolderProvider implements MediaProvider {
     // No match found
     console.log(`[LocalFolderProvider] No TMDB match found for "${originalTitle}" (${year || 'no year'})`)
     return null
+  }
+
+  /**
+   * Try AI disambiguation when multiple TMDB results exist.
+   * Uses Gemini Flash for cost efficiency. Returns null if AI is not configured
+   * or if disambiguation fails, allowing normal fallback to proceed.
+   */
+  private async tryAIDisambiguation(
+    filename: string,
+    year: number | undefined,
+    results: Array<{ id: number; title: string; release_date?: string; overview?: string; poster_path?: string | null; backdrop_path?: string | null }>,
+  ): Promise<{ tmdbId: number; title: string; year?: number; posterPath?: string; backdropPath?: string } | null> {
+    try {
+      const { getGeminiService } = require('../../services/GeminiService')
+      const gemini = getGeminiService()
+      if (!gemini.isConfigured()) return null
+
+      const candidates = results.slice(0, 5).map((r) => ({
+        id: r.id,
+        title: r.title,
+        year: r.release_date ? parseInt(r.release_date.split('-')[0], 10) : undefined,
+        overview: r.overview?.slice(0, 100),
+      }))
+
+      const bestIndex = await gemini.disambiguateTitle(filename, year, candidates)
+      const best = results[bestIndex]
+      if (!best) return null
+
+      console.log(`[LocalFolderProvider] AI disambiguation picked "${best.title}" for "${filename}"`)
+      return {
+        tmdbId: best.id,
+        title: best.title,
+        year: best.release_date ? parseInt(best.release_date.split('-')[0], 10) : undefined,
+        posterPath: best.poster_path || undefined,
+        backdropPath: best.backdrop_path || undefined,
+      }
+    } catch {
+      // AI not available or errored — fall through to normal matching
+      return null
+    }
   }
 
   private async createEpisodeMetadata(

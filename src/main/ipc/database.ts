@@ -187,6 +187,12 @@ export function registerDatabaseHandlers() {
         getTMDBService().refreshApiKey()
       }
 
+      // Refresh Gemini API key/model when they change (no restart needed)
+      if (validKey === 'gemini_api_key' || validKey === 'gemini_model') {
+        const { getGeminiService } = require('../services/GeminiService')
+        getGeminiService().refreshApiKey()
+      }
+
       // Broadcast settings change event to all windows
       const win = BrowserWindow.fromWebContents(event.sender)
       if (win) {

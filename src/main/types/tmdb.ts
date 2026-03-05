@@ -137,6 +137,13 @@ export interface TMDBTVSearchResult {
   popularity: number
 }
 
+export interface TMDBCollectionSearchResult {
+  id: number
+  name: string
+  poster_path: string | null
+  backdrop_path: string | null
+}
+
 export interface TMDBSearchResponse<T> {
   page: number
   results: T[]

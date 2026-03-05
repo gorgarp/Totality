@@ -7,6 +7,7 @@ import {
   TMDBSearchResponse,
   TMDBMovieSearchResult,
   TMDBTVSearchResult,
+  TMDBCollectionSearchResult,
   TMDBConfiguration,
 } from '../types/tmdb'
 import { getDatabase } from '../database/getDatabase'
@@ -358,6 +359,15 @@ export class TMDBService {
    */
   async searchTVShow(query: string): Promise<TMDBSearchResponse<TMDBTVSearchResult>> {
     return await this.request<TMDBSearchResponse<TMDBTVSearchResult>>('/search/tv', {
+      query
+    })
+  }
+
+  /**
+   * Search for movie collections/franchises by name
+   */
+  async searchCollection(query: string): Promise<TMDBSearchResponse<TMDBCollectionSearchResult>> {
+    return await this.request<TMDBSearchResponse<TMDBCollectionSearchResult>>('/search/collection', {
       query
     })
   }

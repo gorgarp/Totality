@@ -5,6 +5,8 @@ import { MediaBrowser } from './components/library/MediaBrowser'
 import { Dashboard } from './components/dashboard'
 import { WishlistPanel } from './components/wishlist/WishlistPanel'
 import { CompletenessPanel } from './components/library/CompletenessPanel'
+import { ChatPanel } from './components/chat/ChatPanel'
+import { AIInsightsPanel } from './components/library/AIInsightsPanel'
 import { SourceProvider, useSources } from './contexts/SourceContext'
 import { WishlistProvider } from './contexts/WishlistContext'
 import { NavigationProvider } from './contexts/NavigationContext'
@@ -37,6 +39,9 @@ function AppContent() {
   // Panel states - managed at app level for TopBar to control
   const [showCompletenessPanel, setShowCompletenessPanel] = useState(false)
   const [showWishlistPanel, setShowWishlistPanel] = useState(false)
+  const [showChatPanel, setShowChatPanel] = useState(false)
+  const [showAIInsights, setShowAIInsights] = useState(false)
+  const [aiInsightsInitialReport, setAiInsightsInitialReport] = useState<string | undefined>(undefined)
 
   // Auto-refresh state (passed up from MediaBrowser)
   const [isAutoRefreshing, setIsAutoRefreshing] = useState(false)
@@ -297,7 +302,7 @@ function AppContent() {
   const handleToggleCompleteness = () => {
     setShowCompletenessPanel(prev => {
       const newState = !prev
-      if (newState) setShowWishlistPanel(false)
+      if (newState) { setShowWishlistPanel(false); setShowChatPanel(false) }
       return newState
     })
   }
@@ -305,7 +310,15 @@ function AppContent() {
   const handleToggleWishlist = () => {
     setShowWishlistPanel(prev => {
       const newState = !prev
-      if (newState) setShowCompletenessPanel(false)
+      if (newState) { setShowCompletenessPanel(false); setShowChatPanel(false) }
+      return newState
+    })
+  }
+
+  const handleToggleChat = () => {
+    setShowChatPanel(prev => {
+      const newState = !prev
+      if (newState) { setShowCompletenessPanel(false); setShowWishlistPanel(false) }
       return newState
     })
   }
@@ -359,8 +372,10 @@ function AppContent() {
           onOpenSettings={() => handleOpenSettings()}
           onToggleCompleteness={handleToggleCompleteness}
           onToggleWishlist={handleToggleWishlist}
+          onToggleChat={handleToggleChat}
           showCompletenessPanel={showCompletenessPanel}
           showWishlistPanel={showWishlistPanel}
+          showChatPanel={showChatPanel}
           isAutoRefreshing={isAutoRefreshing}
           hasMovies={hasMovies}
           hasTV={hasTV}
@@ -372,6 +387,10 @@ function AppContent() {
             <Dashboard
               onNavigateToLibrary={handleNavigateToLibrary}
               onAddSource={() => setShowAddSourceModal(true)}
+              onOpenAIInsights={() => {
+                setAiInsightsInitialReport(undefined)
+                setShowAIInsights(true)
+              }}
               sidebarCollapsed={sidebarCollapsed}
               hasMovies={hasMovies}
               hasTV={hasTV}
@@ -447,10 +466,29 @@ function AppContent() {
               <WishlistPanel
                 isOpen={showWishlistPanel}
                 onClose={() => setShowWishlistPanel(false)}
+                onOpenAIAdvice={() => {
+                  setAiInsightsInitialReport('wishlist')
+                  setShowAIInsights(true)
+                }}
               />
             </SectionErrorBoundary>
           </>
         )}
+        {/* Chat Panel - rendered at App level, available in all views */}
+        <ChatPanel
+          isOpen={showChatPanel}
+          onClose={() => setShowChatPanel(false)}
+          onOpenSettings={() => handleOpenSettings('services')}
+        />
+        <AIInsightsPanel
+          isOpen={showAIInsights}
+          onClose={() => {
+            setShowAIInsights(false)
+            setAiInsightsInitialReport(undefined)
+          }}
+          onOpenSettings={() => handleOpenSettings('services')}
+          initialReport={aiInsightsInitialReport as 'quality' | 'upgrades' | 'completeness' | 'wishlist' | undefined}
+        />
       </div>
       {/* Splash screen overlays the app and fades out to reveal it */}
       {showSplash && <SplashScreen onComplete={markSplashShown} />}

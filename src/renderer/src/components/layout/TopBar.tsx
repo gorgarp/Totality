@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, X, Home, Film, Tv, Music, Library, Star, Settings, RefreshCw, Disc3, User } from 'lucide-react'
+import { Search, X, Home, Film, Tv, Music, Library, Star, Settings, RefreshCw, Disc3, User, Bot } from 'lucide-react'
 import { useSources } from '../../contexts/SourceContext'
 import { useWishlist } from '../../contexts/WishlistContext'
 import { ActivityPanel } from '../ui/ActivityPanel'
@@ -30,8 +30,10 @@ interface TopBarProps {
   onOpenSettings: () => void
   onToggleCompleteness: () => void
   onToggleWishlist: () => void
+  onToggleChat: () => void
   showCompletenessPanel: boolean
   showWishlistPanel: boolean
+  showChatPanel: boolean
   isAutoRefreshing?: boolean
   hasMovies?: boolean
   hasTV?: boolean
@@ -46,8 +48,10 @@ export function TopBar({
   onOpenSettings,
   onToggleCompleteness,
   onToggleWishlist,
+  onToggleChat,
   showCompletenessPanel,
   showWishlistPanel,
+  showChatPanel,
   isAutoRefreshing = false,
   hasMovies = false,
   hasTV = false,
@@ -626,6 +630,21 @@ export function TopBar({
                 {wishlistCount > 99 ? '99+' : wishlistCount}
               </span>
             )}
+          </button>
+
+          {/* AI Chat Toggle */}
+          <button
+            onClick={onToggleChat}
+            className={`p-2 rounded-md transition-colors ${
+              showChatPanel
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-card text-muted-foreground hover:bg-muted'
+            }`}
+            title="AI Assistant"
+            aria-label="Toggle AI chat"
+            aria-pressed={showChatPanel}
+          >
+            <Bot className="w-5 h-5" />
           </button>
 
           {/* Activity Panel */}

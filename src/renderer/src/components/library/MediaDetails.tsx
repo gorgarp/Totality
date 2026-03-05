@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { MoreVertical, RefreshCw, Pencil, EyeOff } from 'lucide-react'
+import { MoreVertical, RefreshCw, Pencil, EyeOff, Sparkles, Loader2 } from 'lucide-react'
 import { AddToWishlistButton } from '../wishlist/AddToWishlistButton'
 import type { WishlistMediaType } from '../../contexts/WishlistContext'
 import { useMenuClose } from '../../hooks/useMenuClose'
@@ -141,6 +141,8 @@ export function MediaDetails({ mediaId, onClose, onRescan, onFixMatch, onDismiss
   const [thresholds, setThresholds] = useState<Record<string, QualityThresholds>>(DEFAULT_THRESHOLDS)
   const [showMenu, setShowMenu] = useState(false)
   const [isRescanning, setIsRescanning] = useState(false)
+  const [aiExplanation, setAiExplanation] = useState<string | null>(null)
+  const [isExplaining, setIsExplaining] = useState(false)
   const menuRef = useMenuClose({ isOpen: showMenu, onClose: useCallback(() => setShowMenu(false), []) })
 
   const handleRescan = async () => {
@@ -158,6 +160,32 @@ export function MediaDetails({ mediaId, onClose, onRescan, onFixMatch, onDismiss
     if (!media || !onFixMatch) return
     setShowMenu(false)
     onFixMatch(media.id, media.title, media.year, media.file_path)
+  }
+
+  const handleExplainQuality = async () => {
+    if (!media || isExplaining) return
+    setIsExplaining(true)
+    setAiExplanation(null)
+    try {
+      const result = await window.electronAPI.aiExplainQuality({
+        title: media.title,
+        resolution: sv?.resolution ?? media.resolution,
+        videoCodec: sv?.video_codec ?? media.video_codec,
+        videoBitrate: sv?.video_bitrate ?? media.video_bitrate,
+        audioCodec: sv?.audio_codec ?? media.audio_codec,
+        audioChannels: sv?.audio_channels ?? media.audio_channels,
+        hdrFormat: sv?.hdr_format ?? media.hdr_format,
+        qualityTier: sv?.quality_tier ?? media.quality_tier,
+        tierQuality: sv?.tier_quality ?? media.tier_quality,
+        tierScore: sv?.tier_score ?? media.tier_score,
+      })
+      setAiExplanation(result.text)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to explain quality'
+      setAiExplanation(`Error: ${msg}`)
+    } finally {
+      setIsExplaining(false)
+    }
   }
 
   const handleDismissUpgrade = () => {
@@ -676,6 +704,42 @@ export function MediaDetails({ mediaId, onClose, onRescan, onFixMatch, onDismiss
               </div>
             )}
           </div>
+
+          {/* AI Quality Explanation */}
+          {(sv?.quality_tier ?? media.quality_tier) && (
+            <div>
+              {aiExplanation ? (
+                <div className="text-xs bg-primary/5 border border-primary/20 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5 text-primary font-medium">
+                      <Sparkles className="w-3 h-3" />
+                      AI Analysis
+                    </div>
+                    <button
+                      onClick={() => setAiExplanation(null)}
+                      className="text-muted-foreground hover:text-foreground text-xs"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">{aiExplanation}</p>
+                </div>
+              ) : (
+                <button
+                  onClick={handleExplainQuality}
+                  disabled={isExplaining}
+                  className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
+                >
+                  {isExplaining ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3 h-3" />
+                  )}
+                  {isExplaining ? 'Analyzing...' : 'Explain quality with AI'}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Insight Banner */}
           {sv && (() => {

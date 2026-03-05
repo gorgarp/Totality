@@ -39,6 +39,7 @@ import { registerMonitoringHandlers } from './ipc/monitoring'
 import { registerTaskQueueHandlers } from './ipc/taskQueue'
 import { registerLoggingHandlers } from './ipc/logging'
 import { registerAutoUpdateHandlers } from './ipc/autoUpdate'
+import { registerGeminiHandlers } from './ipc/gemini'
 import { getLiveMonitoringService } from './services/LiveMonitoringService'
 import { getTaskQueueService } from './services/TaskQueueService'
 import { getLoggingService } from './services/LoggingService'
@@ -367,6 +368,7 @@ app.whenReady().then(async () => {
     registerTaskQueueHandlers()
     registerLoggingHandlers()
     registerAutoUpdateHandlers()
+    registerGeminiHandlers()
 
     // Initialize live monitoring service
     const liveMonitoringService = getLiveMonitoringService()

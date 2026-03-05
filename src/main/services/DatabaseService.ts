@@ -1711,6 +1711,31 @@ export class DatabaseService {
   }
 
   /**
+   * Get media items by TMDB IDs (for cross-referencing with TMDB search results)
+   */
+  getMediaItemsByTmdbIds(tmdbIds: string[]): Map<string, MediaItem> {
+    const resultMap = new Map<string, MediaItem>()
+    if (!this.db || tmdbIds.length === 0) return resultMap
+
+    const batchSize = 500
+    for (let i = 0; i < tmdbIds.length; i += batchSize) {
+      const batch = tmdbIds.slice(i, i + batchSize)
+      const placeholders = batch.map(() => '?').join(',')
+      const result = this.db.exec(
+        `SELECT * FROM media_items WHERE tmdb_id IN (${placeholders})`,
+        batch,
+      )
+      if (result.length > 0) {
+        const rows = this.rowsToObjects<MediaItem>(result[0])
+        for (const row of rows) {
+          if (row.tmdb_id) resultMap.set(row.tmdb_id, row)
+        }
+      }
+    }
+    return resultMap
+  }
+
+  /**
    * Get a media item by file path
    */
   getMediaItemByPath(filePath: string): MediaItem | null {
@@ -3806,7 +3831,7 @@ export class DatabaseService {
     }
 
     // Migrate sensitive settings (read raw from DB)
-    const sensitiveSettingsKeys = ['plex_token', 'tmdb_api_key', 'musicbrainz_api_token']
+    const sensitiveSettingsKeys = ['plex_token', 'tmdb_api_key', 'musicbrainz_api_token', 'gemini_api_key']
     for (const key of sensitiveSettingsKeys) {
       const result = this.db!.exec('SELECT value FROM settings WHERE key = ?', [key])
       if (result.length > 0) {
