@@ -170,7 +170,11 @@ export function registerGeminiHandlers() {
       }
     } catch (error) {
       console.error('Error in ai:chatMessage:', error)
-      throw formatError(error)
+      const formatted = formatError(error)
+      if (formatted.rateLimited) {
+        return formatted
+      }
+      throw formatted
     }
   })
 

@@ -3270,10 +3270,17 @@ WHERE m.type = 'episode' AND m.series_title = ?`
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `)
 
+    const updatePosterStmt = this.db.prepare(
+      'UPDATE wishlist_items SET poster_url = ?, updated_at = datetime(\'now\') WHERE tmdb_id = ? AND (poster_url IS NULL OR poster_url = \'\')'
+    )
+
     const insertMany = this.db.transaction((items: Partial<WishlistItem>[]) => {
       for (const item of items) {
-        // Skip if already exists
-        if (item.tmdb_id && this.wishlistItemExists(item.tmdb_id)) continue
+        // If already exists, update poster if missing then skip insert
+        if (item.tmdb_id && this.wishlistItemExists(item.tmdb_id)) {
+          if (item.poster_url) updatePosterStmt.run(item.poster_url, item.tmdb_id)
+          continue
+        }
         if (item.musicbrainz_id && this.wishlistItemExists(undefined, item.musicbrainz_id)) continue
 
         insertStmt.run(
@@ -4028,17 +4035,20 @@ WHERE m.type = 'episode' AND m.series_title = ?`
     albums: Array<{ id: number; title: string; artist_name: string; year?: number; thumb_url?: string }>
     tracks: Array<{ id: number; title: string; album_id?: number; album_title?: string; artist_name?: string; album_thumb_url?: string }>
   } {
-    if (!this.db || !query || query.length < 2) {
+    if (!this.db || !query) {
       return { movies: [], tvShows: [], episodes: [], artists: [], albums: [], tracks: [] }
     }
 
-    const searchQuery = `%${query.toLowerCase()}%`
+    // For very short queries (1-2 chars), use exact title match to avoid overly broad LIKE results
+    const isShortQuery = query.length <= 2
+    const searchQuery = isShortQuery ? query.toLowerCase() : `%${query.toLowerCase()}%`
+    const likeOp = isShortQuery ? '=' : 'LIKE'
 
     // Search movies
     const moviesStmt = this.db.prepare(`
       SELECT id, title, year, poster_url
       FROM media_items
-      WHERE type = 'movie' AND LOWER(title) LIKE ?
+      WHERE type = 'movie' AND LOWER(title) ${likeOp} ?
       ORDER BY title
       LIMIT ?
     `)
@@ -4050,7 +4060,7 @@ WHERE m.type = 'episode' AND m.series_title = ?`
     const tvShowsStmt = this.db.prepare(`
       SELECT MIN(id) as id, series_title as title, MIN(poster_url) as poster_url
       FROM media_items
-      WHERE type = 'episode' AND series_title IS NOT NULL AND LOWER(series_title) LIKE ?
+      WHERE type = 'episode' AND series_title IS NOT NULL AND LOWER(series_title) ${likeOp} ?
       GROUP BY series_title
       ORDER BY series_title
       LIMIT ?
@@ -4063,7 +4073,7 @@ WHERE m.type = 'episode' AND m.series_title = ?`
     const episodesStmt = this.db.prepare(`
       SELECT id, title, series_title, season_number, episode_number, episode_thumb_url as poster_url
       FROM media_items
-      WHERE type = 'episode' AND (LOWER(title) LIKE ? OR LOWER(series_title) LIKE ?)
+      WHERE type = 'episode' AND (LOWER(title) ${likeOp} ? OR LOWER(series_title) ${likeOp} ?)
       ORDER BY series_title, season_number, episode_number
       LIMIT ?
     `)
@@ -4075,7 +4085,7 @@ WHERE m.type = 'episode' AND m.series_title = ?`
     const artistsStmt = this.db.prepare(`
       SELECT id, name, thumb_url
       FROM music_artists
-      WHERE LOWER(name) LIKE ?
+      WHERE LOWER(name) ${likeOp} ?
       ORDER BY name
       LIMIT ?
     `)
@@ -4087,7 +4097,7 @@ WHERE m.type = 'episode' AND m.series_title = ?`
     const albumsStmt = this.db.prepare(`
       SELECT id, title, artist_name, year, thumb_url
       FROM music_albums
-      WHERE LOWER(title) LIKE ? OR LOWER(artist_name) LIKE ?
+      WHERE LOWER(title) ${likeOp} ? OR LOWER(artist_name) ${likeOp} ?
       ORDER BY title
       LIMIT ?
     `)
@@ -4100,7 +4110,7 @@ WHERE m.type = 'episode' AND m.series_title = ?`
       SELECT t.id, t.title, t.album_id, a.title as album_title, t.artist_name, a.thumb_url as album_thumb_url
       FROM music_tracks t
       LEFT JOIN music_albums a ON t.album_id = a.id
-      WHERE LOWER(t.title) LIKE ? OR LOWER(t.artist_name) LIKE ?
+      WHERE LOWER(t.title) ${likeOp} ? OR LOWER(t.artist_name) ${likeOp} ?
       ORDER BY t.title
       LIMIT ?
     `)

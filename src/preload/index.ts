@@ -1850,7 +1850,7 @@ export interface ElectronAPI {
       activeSourceId?: string
       activeFilters?: string
     }
-  }) => Promise<{ text: string; usage: { input_tokens: number; output_tokens: number }; requestId: string; actionableItems?: Array<{ title: string; year?: number; tmdb_id?: string; media_type: 'movie' | 'tv' }> }>
+  }) => Promise<{ text: string; usage: { input_tokens: number; output_tokens: number }; requestId: string; actionableItems?: Array<{ title: string; year?: number; tmdb_id?: string; media_type: 'movie' | 'tv' }>; rateLimited?: boolean; retryAfterSeconds?: number }>
   onAiToolUse: (callback: (data: { requestId: string; toolName: string; input: Record<string, unknown> }) => void) => () => void
   onAiChatStreamDelta: (callback: (data: { requestId: string; delta: string }) => void) => () => void
   onAiChatStreamComplete: (callback: (data: { requestId: string }) => void) => () => void

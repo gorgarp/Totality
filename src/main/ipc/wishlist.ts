@@ -2,6 +2,7 @@ import { ipcMain, shell, dialog, BrowserWindow } from 'electron'
 import { promises as fs } from 'fs'
 import { getDatabase } from '../database/getDatabase'
 import { getStoreSearchService } from '../services/StoreSearchService'
+import { getTMDBService } from '../services/TMDBService'
 import type { WishlistItem } from '../types/database'
 import type { StoreRegion } from '../services/StoreSearchService'
 import { validateInput, PositiveIntSchema, WishlistItemSchema, WishlistFiltersSchema, SafeUrlSchema, StoreRegionSchema } from '../validation/schemas'
@@ -24,6 +25,20 @@ export function registerWishlistHandlers() {
   ipcMain.handle('wishlist:add', async (_event, item: unknown) => {
     try {
       const validItem = validateInput(WishlistItemSchema, item, 'wishlist:add')
+
+      // Auto-fetch poster from TMDB if tmdb_id is provided but poster_url is missing
+      if (validItem.tmdb_id && !validItem.poster_url) {
+        try {
+          const tmdb = getTMDBService()
+          if (validItem.media_type === 'movie') {
+            const details = await tmdb.getMovieDetails(validItem.tmdb_id)
+            validItem.poster_url = tmdb.buildImageUrl(details.poster_path, 'w300') ?? undefined
+          } else if (['season', 'episode'].includes(validItem.media_type)) {
+            const details = await tmdb.getTVShowDetails(validItem.tmdb_id)
+            validItem.poster_url = tmdb.buildImageUrl(details.poster_path, 'w300') ?? undefined
+          }
+        } catch { /* continue without poster */ }
+      }
 
       return await db.addWishlistItem(validItem)
     } catch (error) {
@@ -132,6 +147,22 @@ export function registerWishlistHandlers() {
   ipcMain.handle('wishlist:addBulk', async (_event, items: unknown) => {
     try {
       const validItems = validateInput(z.array(WishlistItemSchema), items, 'wishlist:addBulk')
+
+      // Auto-fetch posters from TMDB for items missing poster_url
+      const tmdb = getTMDBService()
+      for (const item of validItems) {
+        if (item.tmdb_id && !item.poster_url) {
+          try {
+            if (item.media_type === 'movie') {
+              const details = await tmdb.getMovieDetails(item.tmdb_id)
+              item.poster_url = tmdb.buildImageUrl(details.poster_path, 'w300') ?? undefined
+            } else if (['season', 'episode'].includes(item.media_type)) {
+              const details = await tmdb.getTVShowDetails(item.tmdb_id)
+              item.poster_url = tmdb.buildImageUrl(details.poster_path, 'w300') ?? undefined
+            }
+          } catch { /* continue without poster */ }
+        }
+      }
 
       const added = await db.addWishlistItemsBulk(validItems)
       return { success: true, added }

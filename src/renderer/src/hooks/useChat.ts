@@ -15,6 +15,7 @@ export interface ChatMessage {
   toolsUsed?: string[]
   actionableItems?: ActionableItem[]
   isLoading?: boolean
+  isRateLimited?: boolean
 }
 
 export interface ViewContext {
@@ -137,32 +138,42 @@ export function useChat(viewContext?: ViewContext) {
         viewContext,
       })
 
-      // Update assistant message with response
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantId
-            ? {
-                ...m,
-                content: result.text,
-                isLoading: false,
-                toolsUsed: toolsForCurrentRequest.current.length > 0
-                  ? [...new Set(toolsForCurrentRequest.current)]
-                  : undefined,
-                actionableItems: result.actionableItems,
-              }
-            : m,
-        ),
-      )
-    } catch (err: unknown) {
-      const errorObj = err as { error?: string; rateLimited?: boolean; retryAfterSeconds?: number }
-
-      if (errorObj.rateLimited && errorObj.retryAfterSeconds) {
-        startRateLimitCountdown(errorObj.retryAfterSeconds)
-        setError(`Rate limit reached. Try again in ${errorObj.retryAfterSeconds}s`)
+      // Check if result is a rate limit response (returned, not thrown)
+      if (result.rateLimited && result.retryAfterSeconds) {
+        startRateLimitCountdown(result.retryAfterSeconds)
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? {
+                  ...m,
+                  content: `I've hit the API rate limit for the free tier. Please try again later!`,
+                  isLoading: false,
+                  isRateLimited: true,
+                }
+              : m,
+          ),
+        )
       } else {
-        setError(errorObj.error || 'Failed to send message')
+        // Update assistant message with response
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? {
+                  ...m,
+                  content: result.text,
+                  isLoading: false,
+                  toolsUsed: toolsForCurrentRequest.current.length > 0
+                    ? [...new Set(toolsForCurrentRequest.current)]
+                    : undefined,
+                  actionableItems: result.actionableItems,
+                }
+              : m,
+          ),
+        )
       }
-
+    } catch (err: unknown) {
+      const errorObj = err as { error?: string }
+      setError(errorObj.error || 'Failed to send message')
       // Remove the placeholder assistant message on error
       setMessages((prev) => prev.filter((m) => m.id !== assistantId))
     } finally {

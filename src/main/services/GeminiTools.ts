@@ -175,11 +175,12 @@ export const LIBRARY_TOOLS: GeminiToolDefinition[] = [
   },
   {
     name: 'get_similar_titles',
-    description: 'Find movies or TV shows similar to a given title. Combines TMDB "similar" and "recommendations" endpoints for best results. Use for "movies like X" or "shows similar to X" queries.',
+    description: 'Find movies or TV shows similar to a given title. Combines TMDB "similar" and "recommendations" endpoints for best results. Use for "movies like X" or "shows similar to X" queries. Always provide year when known to ensure correct title match.',
     parameters: {
       type: 'object',
       properties: {
         title: { type: 'string', description: 'Title to find similar content for' },
+        year: { type: 'number', description: 'Release year (important for disambiguation, especially short titles)' },
         media_type: { type: 'string', enum: ['movie', 'tv'], description: 'Type of media' },
         limit: { type: 'number', description: 'Max results (default 20, max 30)' },
       },
@@ -334,6 +335,36 @@ export async function executeTool(
     case 'search_library': {
       const query = input.query as string
       const results = db.globalSearch(query, 10)
+      const hasResults = results.movies.length > 0 || results.tvShows.length > 0 ||
+        results.episodes.length > 0 || results.artists.length > 0 ||
+        results.albums.length > 0 || results.tracks.length > 0
+
+      // Fallback: if no local results, try TMDB lookup + ownership check
+      if (!hasResults) {
+        try {
+          const tmdb = getTMDBService()
+          const movieResults = await tmdb.searchMovie(query)
+          if (movieResults.results.length > 0) {
+            const tmdbIds = movieResults.results.slice(0, 5).map((m: { id: number }) => String(m.id))
+            const ownedMap = db.getMediaItemsByTmdbIds(tmdbIds)
+            const found = movieResults.results.slice(0, 5).map((m: { id: number; title: string; release_date?: string }) => {
+              const owned = ownedMap.get(String(m.id)) as Record<string, unknown> | undefined
+              return compact({
+                title: m.title,
+                year: m.release_date?.substring(0, 4),
+                tmdb_id: m.id,
+                owned: !!owned,
+                quality: owned ? `${owned.quality_tier} ${owned.tier_quality}` : null,
+                id: owned ? owned.id : null,
+              })
+            })
+            return JSON.stringify({ tmdb_matches: found })
+          }
+        } catch {
+          // TMDB fallback failed, return empty results
+        }
+      }
+
       return JSON.stringify(results)
     }
 
@@ -759,13 +790,14 @@ export async function executeTool(
 
     case 'get_similar_titles': {
       const title = input.title as string
+      const year = input.year as number | undefined
       const mediaType = input.media_type as 'movie' | 'tv'
       const limit = Math.min((input.limit as number) || 20, 30)
       const tmdb = getTMDBService()
 
       if (mediaType === 'movie') {
-        // Search for the movie first
-        const searchResults = await tmdb.searchMovie(title)
+        // Search for the movie first (with year for disambiguation)
+        const searchResults = await tmdb.searchMovie(title, year)
         if (searchResults.results.length === 0) {
           return JSON.stringify({ error: `Could not find movie "${title}" on TMDB` })
         }
@@ -1055,9 +1087,20 @@ export async function executeTool(
         let resolvedTitle = item.title
         let posterUrl: string | null = null
 
-        // Resolve TMDB ID if not provided
-        if (!tmdbId) {
-          try {
+        try {
+          if (tmdbId) {
+            // Fetch poster from TMDB using known ID
+            if (item.media_type === 'movie') {
+              const details = await tmdb.getMovieDetails(tmdbId)
+              posterUrl = tmdb.buildImageUrl(details.poster_path, 'w300')
+              resolvedTitle = details.title || resolvedTitle
+            } else {
+              const details = await tmdb.getTVShowDetails(tmdbId)
+              posterUrl = tmdb.buildImageUrl(details.poster_path, 'w300')
+              resolvedTitle = details.name || resolvedTitle
+            }
+          } else {
+            // Search TMDB to resolve ID and poster
             if (item.media_type === 'movie') {
               const results = await tmdb.searchMovie(item.title, item.year)
               if (results.results.length > 0) {
@@ -1075,8 +1118,8 @@ export async function executeTool(
                 posterUrl = tmdb.buildImageUrl(match.poster_path, 'w300')
               }
             }
-          } catch { /* continue without TMDB data */ }
-        }
+          }
+        } catch { /* continue without TMDB data */ }
 
         wishlistItems.push({
           media_type: item.media_type === 'tv' ? 'season' : 'movie',

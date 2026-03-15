@@ -45,6 +45,35 @@ type LogFilter = 'all' | 'verbose' | 'debug' | 'info' | 'warn' | 'error'
 
 const LOG_ROW_HEIGHT = 28
 
+function Toggle({
+  checked,
+  onChange,
+  disabled = false,
+}: {
+  checked: boolean
+  onChange: (checked: boolean) => void
+  disabled?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => !disabled && onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background ${
+        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+      } ${checked ? 'bg-primary' : 'bg-muted'}`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md ring-1 ring-border/50 transition-transform ${
+          checked ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  )
+}
+
 export function TroubleshootTab() {
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -562,9 +591,6 @@ export function TroubleshootTab() {
           )}
           <HardDrive className="w-3.5 h-3.5" />
           <span className="font-medium">File Logging</span>
-          <span className={`text-xs px-1.5 py-0.5 rounded ${fileLoggingSettings.enabled ? 'bg-green-500/20 text-green-400' : 'bg-muted text-muted-foreground'}`}>
-            {fileLoggingSettings.enabled ? 'On' : 'Off'}
-          </span>
         </button>
 
         {fileLoggingExpanded && (
@@ -573,18 +599,10 @@ export function TroubleshootTab() {
               <div className="flex items-center gap-2">
                 <span className="text-sm">Write logs to disk</span>
               </div>
-              <button
-                onClick={() => handleFileLoggingSetting({ enabled: !fileLoggingSettings.enabled })}
-                className={`relative w-9 h-5 rounded-full transition-colors ${
-                  fileLoggingSettings.enabled ? 'bg-primary' : 'bg-muted-foreground/30'
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-                    fileLoggingSettings.enabled ? 'translate-x-4' : ''
-                  }`}
-                />
-              </button>
+              <Toggle
+                checked={fileLoggingSettings.enabled}
+                onChange={(checked) => handleFileLoggingSetting({ enabled: checked })}
+              />
             </div>
 
             <div className="flex items-center gap-4">

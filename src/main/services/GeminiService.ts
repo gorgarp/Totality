@@ -105,6 +105,38 @@ export class GeminiService {
   }
 
   /**
+   * Extract retry-after seconds from HTTP headers (Fetch API Headers object).
+   * Checks retry-after-ms (Gemini-specific), retry-after (seconds or HTTP-date).
+   */
+  private extractRetrySeconds(headers: unknown): number | null {
+    if (!headers || typeof headers !== 'object') return null
+    const h = headers as { get?: (name: string) => string | null }
+    if (typeof h.get !== 'function') return null
+
+    // 1. retry-after-ms — milliseconds (Gemini-specific, most precise)
+    const msValue = h.get('retry-after-ms')
+    if (msValue) {
+      const ms = parseInt(msValue, 10)
+      if (!isNaN(ms) && ms > 0) return Math.ceil(ms / 1000)
+    }
+
+    // 2. retry-after — seconds or HTTP-date
+    const retryAfter = h.get('retry-after')
+    if (retryAfter) {
+      const secs = parseInt(retryAfter, 10)
+      if (!isNaN(secs) && secs > 0) return secs
+      // Try parsing as HTTP-date
+      const date = new Date(retryAfter)
+      if (!isNaN(date.getTime())) {
+        const diff = Math.ceil((date.getTime() - Date.now()) / 1000)
+        if (diff > 0) return diff
+      }
+    }
+
+    return null
+  }
+
+  /**
    * Check rate limit before making a request
    */
   private checkRateLimit(): void {
@@ -132,12 +164,9 @@ export class GeminiService {
    */
   private handleApiError(error: unknown): never {
     if (error && typeof error === 'object' && 'status' in error) {
-      const apiError = error as { status: number; message?: string; headers?: Record<string, string> }
+      const apiError = error as { status: number; message?: string; headers?: unknown }
       if (apiError.status === 429) {
-        const retryAfter = apiError.headers?.['retry-after']
-          ? parseInt(apiError.headers['retry-after'], 10)
-          : 60
-        const retryAfterSeconds = isNaN(retryAfter) ? 60 : retryAfter
+        const retryAfterSeconds = this.extractRetrySeconds(apiError.headers) ?? 15
         this.rateLimitedUntil = Date.now() + (retryAfterSeconds * 1000)
         throw new RateLimitError(
           `Rate limit reached. Try again in ${retryAfterSeconds}s`,
@@ -151,7 +180,9 @@ export class GeminiService {
     }
     // Check for RESOURCE_EXHAUSTED in error message (Gemini rate limit pattern)
     if (error instanceof Error && error.message?.includes('RESOURCE_EXHAUSTED')) {
-      const retryAfterSeconds = 60
+      // SDK APIError subclasses also have headers
+      const headers = (error as { headers?: unknown }).headers
+      const retryAfterSeconds = this.extractRetrySeconds(headers) ?? 15
       this.rateLimitedUntil = Date.now() + (retryAfterSeconds * 1000)
       throw new RateLimitError(
         `Rate limit reached. Try again in ${retryAfterSeconds}s`,

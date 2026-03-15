@@ -394,10 +394,6 @@ function AppContent() {
             <Dashboard
               onNavigateToLibrary={handleNavigateToLibrary}
               onAddSource={() => setShowAddSourceModal(true)}
-              onOpenAIInsights={() => {
-                setAiInsightsInitialReport(undefined)
-                setShowAIInsights(true)
-              }}
               sidebarCollapsed={sidebarCollapsed}
               hasMovies={hasMovies}
               hasTV={hasTV}

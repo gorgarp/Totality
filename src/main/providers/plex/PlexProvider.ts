@@ -55,6 +55,32 @@ const PLEX_TV_URL = 'https://plex.tv'
 const CLIENT_IDENTIFIER = 'totality'
 const PRODUCT_NAME = 'Totality'
 
+/**
+ * Get reliable video bitrate, validating the Plex-reported stream bitrate
+ * against the overall container bitrate. Plex sometimes reports incorrect
+ * per-stream bitrates for certain files.
+ */
+function getReliableVideoBitrate(
+  videoStreamBitrate: number | undefined,
+  mediaBitrate: number | undefined,
+  audioStreams: Array<{ bitrate?: number }>
+): number {
+  const overall = mediaBitrate || 0
+  const audioBitrateSum = audioStreams.reduce((sum, s) => sum + (s.bitrate || 0), 0)
+  const calculated = Math.max(0, overall - audioBitrateSum)
+
+  // Use stream bitrate if it's reasonable (at least 30% of overall bitrate)
+  if (videoStreamBitrate && overall > 0 && videoStreamBitrate >= overall * 0.3) {
+    return videoStreamBitrate
+  }
+  // Use stream bitrate if we have no overall to compare against
+  if (videoStreamBitrate && !overall) {
+    return videoStreamBitrate
+  }
+  // Fallback: calculated or overall
+  return calculated || overall
+}
+
 export class PlexProvider implements MediaProvider {
   readonly providerType = 'plex' as const
   readonly sourceId: string
@@ -600,10 +626,11 @@ export class PlexProvider implements MediaProvider {
       }
 
       // Remove stale items
-      if (!isIncremental && libraryType && scannedProviderIds.size > 0) {
-        // Full scan: use the IDs we just scanned
+      if (!isIncremental && libraryType) {
+        // Full scan: fetch complete set of current Plex IDs to reconcile deletions
+        const currentPlexIds = await this.getPlexLibraryItemIds(libraryId, libraryType)
         const itemType = libraryType === 'show' ? 'episode' : 'movie'
-        const removedCount = await this.removeStaleItems(scannedProviderIds, itemType, libraryId)
+        const removedCount = await this.removeStaleItems(currentPlexIds, itemType, libraryId)
         result.itemsRemoved = removedCount
       } else if (isIncremental) {
         // Incremental scan: fetch all current IDs from Plex to detect changes
@@ -993,7 +1020,7 @@ export class PlexProvider implements MediaProvider {
       height,
       videoCodec: normalizeVideoCodec(media?.videoCodec),
       videoBitrate: normalizeBitrate(
-        videoStream?.bitrate || Math.max(0, (media?.bitrate || 0) - audioStreams.reduce((sum, s) => sum + (s.bitrate || 0), 0)) || media?.bitrate || 0,
+        getReliableVideoBitrate(videoStream?.bitrate, media?.bitrate, audioStreams),
         'kbps'
       ),
       videoFrameRate: normalizeFrameRate(videoStream?.frameRate),
@@ -1111,7 +1138,7 @@ export class PlexProvider implements MediaProvider {
         height,
         video_codec: normalizeVideoCodec(media.videoCodec),
         video_bitrate: normalizeBitrate(
-          videoStream.bitrate || Math.max(0, (media.bitrate || 0) - audioStreams.reduce((sum, s) => sum + (s.bitrate || 0), 0)) || media.bitrate || 0,
+          getReliableVideoBitrate(videoStream.bitrate, media.bitrate, audioStreams),
           'kbps'
         ),
         audio_codec: normalizeAudioCodec(media.audioCodec, audioStream?.profile),

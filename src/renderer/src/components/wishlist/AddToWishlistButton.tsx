@@ -164,11 +164,7 @@ export function AddToWishlistButton({
     <button
       onClick={handleToggle}
       disabled={isLoading}
-      className={`inline-flex items-center gap-1.5 rounded-md text-sm disabled:opacity-50 transition-colors ${
-        isInWishlist
-          ? 'px-2.5 py-1.5 bg-amber-400/10 border border-amber-400/30 text-amber-500 hover:bg-amber-400/20'
-          : 'gap-2 px-3 py-2 bg-primary text-primary-foreground hover:bg-primary/90'
-      }`}
+      className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm disabled:opacity-50 transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
     >
       <Star className={`w-4 h-4 ${isInWishlist ? 'fill-amber-400 text-amber-400' : ''}`} />
       <span>{isInWishlist ? inListLabel : buttonLabel}</span>

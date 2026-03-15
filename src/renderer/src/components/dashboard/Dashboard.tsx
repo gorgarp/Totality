@@ -56,7 +56,6 @@ interface SeasonGroup {
 interface DashboardProps {
   onNavigateToLibrary: (view: 'movies' | 'tv' | 'music') => void
   onAddSource?: () => void
-  onOpenAIInsights?: () => void
   sidebarCollapsed?: boolean
   hasMovies?: boolean
   hasTV?: boolean
@@ -86,7 +85,6 @@ const TYPE_SECTION_GAP = 12         // space-y-3 gap between album type groups
 export function Dashboard({
   onNavigateToLibrary: _onNavigateToLibrary,
   onAddSource,
-  onOpenAIInsights,
   sidebarCollapsed = false,
   hasMovies = false,
   hasTV = false,
@@ -1162,16 +1160,6 @@ export function Dashboard({
                   <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Upgrades</h2>
                 </div>
                 <div className="flex items-center gap-2">
-                  {onOpenAIInsights && (
-                    <button
-                      onClick={onOpenAIInsights}
-                      className="flex items-center gap-1 px-2 py-0.5 text-xs bg-primary/10 text-primary hover:bg-primary/20 rounded transition-colors"
-                      title="AI Insights"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>AI</span>
-                    </button>
-                  )}
                   <select
                     value={upgradeSortBy}
                     onChange={e => setUpgradeSortBy(e.target.value as 'quality' | 'recent' | 'title')}

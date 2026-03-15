@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { Bot, X, Send, Trash2, AlertCircle, Clock, Settings } from 'lucide-react'
+import { Bot, X, Send, Trash2, AlertCircle, Settings } from 'lucide-react'
 import { useChat, type ViewContext } from '../../hooks/useChat'
 import { ChatMessage } from './ChatMessage'
 
@@ -129,7 +129,7 @@ export function ChatPanel({ isOpen, onClose, onOpenSettings, viewContext }: Chat
       {/* Not configured state */}
       {isConfigured === false && (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <Bot className="w-10 h-10 text-muted-foreground/30 mb-3" />
+          <Bot className="w-10 h-10 text-muted-foreground mb-3" />
           <p className="text-sm font-medium mb-1">Gemini AI not configured</p>
           <p className="text-xs text-muted-foreground mb-4">
             Get a free Gemini API key from Google AI Studio in Settings &gt; Services.
@@ -152,7 +152,7 @@ export function ChatPanel({ isOpen, onClose, onOpenSettings, viewContext }: Chat
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
             {messages.length === 0 && !isLoading && (
               <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                <Bot className="w-8 h-8 text-muted-foreground/20 mb-3" />
+                <Bot className="w-8 h-8 text-muted-foreground mb-3" />
                 <p className="text-xs text-muted-foreground mb-3">
                   Ask me about your media library
                 </p>
@@ -197,15 +197,6 @@ export function ChatPanel({ isOpen, onClose, onOpenSettings, viewContext }: Chat
             </div>
           )}
 
-          {/* Rate limit countdown */}
-          {rateLimit.limited && (
-            <div className="px-3 pb-2">
-              <div className="flex items-center gap-2 px-3 py-2 text-xs bg-amber-500/10 text-amber-400 rounded-lg">
-                <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>Available again in {rateLimit.retryAfterSeconds}s</span>
-              </div>
-            </div>
-          )}
 
           {/* Input area */}
           <div className="px-3 pb-3 pt-2 border-t border-border/30">
@@ -215,11 +206,7 @@ export function ChatPanel({ isOpen, onClose, onOpenSettings, viewContext }: Chat
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={
-                  rateLimit.limited
-                    ? `Rate limited (${rateLimit.retryAfterSeconds}s)...`
-                    : 'Ask about your library...'
-                }
+                placeholder="Ask about your library..."
                 disabled={isLoading || rateLimit.limited}
                 rows={1}
                 className="flex-1 px-3 py-2 bg-background border border-border/30 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 min-h-[36px] max-h-[100px]"
