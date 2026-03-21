@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { MoreVertical, RefreshCw, Pencil, EyeOff, X } from 'lucide-react'
+import { MoreVertical, RefreshCw, Pencil, EyeOff, X, Copy, Check } from 'lucide-react'
 import { AddToWishlistButton } from '../wishlist/AddToWishlistButton'
 import type { WishlistMediaType } from '../../contexts/WishlistContext'
 import { useMenuClose } from '../../hooks/useMenuClose'
@@ -142,6 +142,7 @@ export function MediaDetails({ mediaId, onClose, onRescan, onFixMatch, onDismiss
   const [thresholds, setThresholds] = useState<Record<string, QualityThresholds>>(DEFAULT_THRESHOLDS)
   const [showMenu, setShowMenu] = useState(false)
   const [isRescanning, setIsRescanning] = useState(false)
+  const [copied, setCopied] = useState(false)
   const menuRef = useMenuClose({ isOpen: showMenu, onClose: useCallback(() => setShowMenu(false), []) })
 
   const handleRescan = async () => {
@@ -476,7 +477,7 @@ export function MediaDetails({ mediaId, onClose, onRescan, onFixMatch, onDismiss
             <img
               src={media.type === 'episode' && media.episode_thumb_url ? media.episode_thumb_url : media.poster_url}
               alt=""
-              className={`rounded-lg object-cover flex-shrink-0 ${
+              className={`rounded-lg object-cover flex-shrink-0 shadow-lg shadow-black/30 ${
                 media.type === 'episode' && media.episode_thumb_url ? 'w-44 h-28' : 'w-24 h-36'
               }`}
               onError={(e) => { e.currentTarget.style.display = 'none' }}
@@ -487,9 +488,26 @@ export function MediaDetails({ mediaId, onClose, onRescan, onFixMatch, onDismiss
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h2 className="text-xl font-medium truncate">{displayTitle}</h2>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <h2 className="text-xl font-medium truncate">{displayTitle}</h2>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      navigator.clipboard.writeText(displayTitle)
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 1500)
+                    }}
+                    className="flex-shrink-0 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                    title="Copy title"
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
                 {media.type === 'episode' && (
                   <p className="text-sm text-muted-foreground">S{media.season_number}E{media.episode_number} · {media.title}</p>
+                )}
+                {(sv?.edition || (versions.length === 1 && versions[0]?.edition)) && (
+                  <p className="text-sm text-muted-foreground">{sv?.edition || versions[0]?.edition}</p>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">

@@ -1342,27 +1342,33 @@ export function MediaBrowser({
     if (type === 'movie') {
       setView('movies')
       setSelectedMediaId(typeof id === 'string' ? parseInt(id, 10) : id)
+    } else if (type === 'tv') {
+      setView('tv')
+      setSelectedShow(typeof id === 'string' ? id : String(id))
+      setSelectedSeason(null)
     } else if (type === 'episode') {
       setView('tv')
       if (pendingNavigation.seriesTitle) {
         setSelectedShow(pendingNavigation.seriesTitle)
       }
+      if (pendingNavigation.seasonNumber !== undefined) {
+        setSelectedSeason(pendingNavigation.seasonNumber)
+      }
       setSelectedMediaId(typeof id === 'string' ? parseInt(id, 10) : id)
     } else if (type === 'artist') {
       setView('music')
       setMusicViewMode('artists')
-      // Find artist by name since we may not have the ID directly
-      if (artistName) {
-        const artist = musicArtists.find(a => a.name === artistName)
-        if (artist) {
-          setSelectedArtist(artist)
-        } else {
-          // Artist not in paginated list — search server by name
-          window.electronAPI.musicGetArtists({ searchQuery: artistName, limit: 1, offset: 0 }).then(result => {
-            const artists = result as MusicArtist[]
-            if (artists.length > 0) setSelectedArtist(artists[0])
-          }).catch(err => console.error('Failed to find artist for navigation:', err))
-        }
+      // Find artist by ID first, then fall back to name search
+      const numId = typeof id === 'string' ? parseInt(id, 10) : id
+      const artist = musicArtists.find(a => a.id === numId)
+      if (artist) {
+        setSelectedArtist(artist)
+      } else if (artistName) {
+        // Artist not in paginated list — search server by name
+        window.electronAPI.musicGetArtists({ searchQuery: artistName, limit: 1, offset: 0 }).then(result => {
+          const artists = result as MusicArtist[]
+          if (artists.length > 0) setSelectedArtist(artists[0])
+        }).catch(err => console.error('Failed to find artist for navigation:', err))
       }
     } else if (type === 'album') {
       setView('music')

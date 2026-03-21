@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, EyeOff } from 'lucide-react'
+import { X, EyeOff, Copy, Check } from 'lucide-react'
 import { AddToWishlistButton } from '../wishlist/AddToWishlistButton'
 
 // Helper function to format season label (Season 0 = Specials)
@@ -46,6 +46,7 @@ export function MissingItemPopup({
 }: MissingItemPopupProps) {
   const [seasonDetails, setSeasonDetails] = useState<SeasonDetails | null>(null)
   const [movieOverview, setMovieOverview] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   // Fetch details from TMDB when popup opens
   useEffect(() => {
@@ -134,7 +135,7 @@ export function MissingItemPopup({
         <div className="p-4 flex gap-4">
           {/* Poster — fixed size, not squeezed */}
           <div className="w-28 flex-shrink-0">
-            <div className="aspect-[2/3] bg-muted rounded-md overflow-hidden">
+            <div className="aspect-[2/3] bg-muted rounded-md overflow-hidden shadow-lg shadow-black/30">
               {posterUrl ? (
                 <img
                   src={posterUrl}
@@ -154,7 +155,31 @@ export function MissingItemPopup({
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-lg truncate">{title}</h3>
+            <div className="flex items-center gap-1.5 min-w-0">
+              {tmdbId ? (
+                <h3
+                  className="font-semibold text-lg truncate text-primary hover:underline cursor-pointer"
+                  onClick={() => window.electronAPI.openExternal(`https://www.themoviedb.org/${type === 'movie' ? 'movie' : 'tv'}/${tmdbId}`)}
+                  title="Open on TMDb"
+                >
+                  {title}
+                </h3>
+              ) : (
+                <h3 className="font-semibold text-lg truncate">{title}</h3>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  navigator.clipboard.writeText(title)
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 1500)
+                }}
+                className="flex-shrink-0 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                title="Copy title"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            </div>
             {subtitle && (
               <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
             )}

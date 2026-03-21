@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Search, Check, Star, Calendar, Loader2 } from 'lucide-react'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
 
@@ -236,7 +237,7 @@ export function MatchFixModal({
 
   if (!isOpen) return null
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60"
       onClick={onClose}
@@ -404,6 +405,7 @@ export function MatchFixModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

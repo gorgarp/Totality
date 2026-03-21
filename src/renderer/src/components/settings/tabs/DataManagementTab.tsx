@@ -176,22 +176,27 @@ export function DataManagementTab() {
   return (
     <div className="p-6 space-y-5 overflow-y-auto">
       {/* Database Location Section */}
-      <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/40">
-        <div className="flex items-center gap-3 min-w-0">
-          <Database className="w-7 h-7 text-primary flex-shrink-0" />
-          <div className="min-w-0">
-            <h3 className="text-sm font-medium text-foreground">
-              Database Location <span className="font-normal text-xs text-muted-foreground ml-2 truncate">{dbPath}</span>
-            </h3>
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium text-foreground">Database</h3>
+
+        <div className="bg-muted/30 rounded-lg border border-border/40">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <Database className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+              <div className="min-w-0">
+                <span className="text-sm text-foreground">Database Location</span>
+                <p className="text-xs text-muted-foreground truncate">{dbPath}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => window.electronAPI.dbOpenFolder()}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+              Open Folder
+            </button>
           </div>
         </div>
-        <button
-          onClick={() => window.electronAPI.dbOpenFolder()}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-        >
-          <FolderOpen className="w-3.5 h-3.5" />
-          Open Folder
-        </button>
       </div>
 
       {/* Export Options */}

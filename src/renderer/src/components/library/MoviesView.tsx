@@ -308,7 +308,7 @@ function CollectionListItem({ collection, onClick }: { collection: MovieCollecti
     <div
       ref={cardRef}
       tabIndex={0}
-      className="group cursor-pointer rounded-md overflow-hidden bg-muted/20 hover:bg-muted/40 transition-all duration-200 p-4 flex gap-4 items-center outline-none"
+      className="group cursor-pointer rounded-md bg-muted/20 hover:bg-muted/40 transition-all duration-200 p-4 flex gap-4 items-center outline-none"
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -339,23 +339,14 @@ function CollectionListItem({ collection, onClick }: { collection: MovieCollecti
       {/* Info */}
       <div className="flex-1 min-w-0">
         <h4 className="font-semibold text-sm truncate">{collection.collection_name}</h4>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {collection.owned_movies} of {collection.total_movies} movies
-        </p>
-      </div>
-
-      {/* Collection completion badge - aligned with upgrade icon position */}
-      <div className="flex-shrink-0 flex items-center justify-center">
-        <div
-          className={`text-xs font-bold px-2 py-1 rounded shadow-md flex items-center gap-1 ${
-            collection.completeness_percentage === 100
-              ? 'bg-green-500 text-white'
-              : 'bg-foreground text-background border border-border'
-          }`}
-          title={`${collection.owned_movies} of ${collection.total_movies} movies owned`}
-        >
-          <Layers className="w-3 h-3" />
-          <span>{collection.owned_movies}/{collection.total_movies}</span>
+        <div className="flex items-center gap-1 mt-0.5">
+          <span
+            className="px-2 py-0.5 text-xs font-medium bg-foreground text-background rounded flex items-center gap-1"
+            title={`${collection.owned_movies} of ${collection.total_movies} movies owned`}
+          >
+            <Layers className="w-3 h-3" />
+            {collection.owned_movies}/{collection.total_movies}
+          </span>
         </div>
       </div>
     </div>
@@ -434,7 +425,7 @@ const MovieCard = memo(({ movie, onClick, collectionData, showSourceBadge, onFix
 
             {/* Dropdown menu */}
             {showMenu && !isRescanning && (
-              <div className="absolute top-8 left-0 bg-card border border-border rounded-md shadow-lg py-1 min-w-[140px]">
+              <div className="absolute top-8 left-0 bg-card border border-border rounded-md shadow-lg py-1 min-w-[160px]">
                 {onRescan && movie.file_path && (
                   <button
                     onClick={handleRescan}
@@ -589,7 +580,7 @@ const MovieListItem = memo(({ movie, onClick, showSourceBadge, collectionData, o
     <div
       ref={cardRef}
       tabIndex={0}
-      className="group cursor-pointer rounded-md overflow-hidden bg-muted/20 hover:bg-muted/40 transition-all duration-200 p-4 flex gap-4 items-center outline-none"
+      className="group cursor-pointer rounded-md bg-muted/20 hover:bg-muted/40 transition-all duration-200 p-4 flex gap-4 items-center outline-none"
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -613,63 +604,12 @@ const MovieListItem = memo(({ movie, onClick, showSourceBadge, collectionData, o
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted/50"><MoviePlaceholder className="w-8 h-8 text-muted-foreground" /></div>
         )}
-        {/* 3-dot menu button */}
-        {showMenuButton && (
-          <div ref={menuRef} className="absolute top-1 left-1 z-20">
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowMenu(!showMenu)
-              }}
-              className={`w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition-opacity ${isRescanning ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-            >
-              {isRescanning ? (
-                <RefreshCw className="w-3 h-3 animate-spin" />
-              ) : (
-                <MoreVertical className="w-3 h-3" />
-              )}
-            </button>
-
-            {/* Dropdown menu */}
-            {showMenu && !isRescanning && (
-              <div className="absolute top-7 left-0 bg-card border border-border rounded-md shadow-lg py-1 min-w-[140px]">
-                {onRescan && movie.file_path && (
-                  <button
-                    onClick={handleRescan}
-                    className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted flex items-center gap-2"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Rescan File
-                  </button>
-                )}
-                {onFixMatch && (
-                  <button
-                    onClick={handleFixMatch}
-                    className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted flex items-center gap-2"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                    Fix Match
-                  </button>
-                )}
-                {onDismissUpgrade && needsUpgrade && (
-                  <button
-                    onClick={handleDismissUpgrade}
-                    className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted flex items-center gap-2"
-                  >
-                    <EyeOff className="w-3.5 h-3.5" />
-                    Dismiss Upgrade
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
         {/* Source badge for list view */}
         {showSourceBadge && movie.source_type && (
           <div
-            className={`absolute bottom-0 left-0 right-0 ${providerColors[movie.source_type] || 'bg-gray-500'} text-white text-xs font-bold text-center py-0.5`}
+            className={`absolute bottom-0 right-0 ${providerColors[movie.source_type] || 'bg-gray-500'} text-white text-xs font-bold px-1 py-0.5 rounded`}
           >
-            {movie.source_type.toUpperCase()}
+            {movie.source_type.charAt(0).toUpperCase()}
           </div>
         )}
       </div>
@@ -677,41 +617,79 @@ const MovieListItem = memo(({ movie, onClick, showSourceBadge, collectionData, o
       {/* Info */}
       <div className="flex-1 min-w-0">
         <h4 className="font-semibold text-sm truncate">{movie.title}</h4>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {movie.year}{movie.year && movie.resolution ? ' • ' : ''}{movie.resolution}
-          {movie.version_count && movie.version_count > 1 && ` • ${movie.version_count} versions`}
-        </p>
-        <div className="mt-2 flex items-center gap-2 flex-wrap">
-          {movie.quality_tier && movie.tier_quality && (
-            <span className="text-xs text-muted-foreground">
-              {movie.quality_tier} • {movie.tier_quality}
+        <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
+          <span>
+            {movie.year}{movie.year && movie.resolution ? ' • ' : ''}{movie.resolution}
+            {movie.video_bitrate ? ` • ${(movie.video_bitrate / 1000).toFixed(1)} Mbps` : ''}
+            {movie.audio_channels ? ` • ${movie.audio_channels}.0 Audio` : ''}
+            {movie.version_count && movie.version_count > 1 && ` • ${movie.version_count} versions`}
+          </span>
+          {needsUpgrade && (
+            <>
+              <span>•</span>
+              <CircleFadingArrowUp className="w-4 h-4 text-red-500 flex-shrink-0" title="Quality upgrade recommended" />
+            </>
+          )}
+          {collectionData && (
+            <span className="px-2 py-0.5 text-xs font-medium bg-foreground text-background rounded flex items-center gap-1 ml-1">
+              <Layers className="w-3 h-3" />
+              {collectionData.owned_movies}/{collectionData.total_movies}
             </span>
           )}
-          <QualityBadges item={movie} whiteBg={false} />
         </div>
       </div>
 
-      {/* Badges */}
-      <div className="flex-shrink-0 flex items-center justify-center">
-        {/* Show upgrade icon if needs upgrade, otherwise show collection badge */}
-        {needsUpgrade ? (
-          <div title="Quality upgrade recommended">
-            <CircleFadingArrowUp className="w-6 h-6 text-red-500" />
-          </div>
-        ) : collectionData ? (
-          <div
-            className={`text-xs font-bold px-2 py-1 rounded shadow-md flex items-center gap-1 ${
-              collectionData.completeness_percentage === 100
-                ? 'bg-green-500 text-white'
-                : 'bg-foreground text-background border border-border'
-            }`}
-            title={`Part of ${collectionData.collection_name} (${collectionData.owned_movies}/${collectionData.total_movies})`}
+      {/* 3-dot menu */}
+      {showMenuButton && (
+        <div ref={menuRef} className="relative flex-shrink-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowMenu(!showMenu)
+            }}
+            className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
           >
-            <Layers className="w-3 h-3" />
-            <span>{collectionData.owned_movies}/{collectionData.total_movies}</span>
-          </div>
-        ) : null}
-      </div>
+            {isRescanning ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <MoreVertical className="w-4 h-4" />
+            )}
+          </button>
+
+          {/* Dropdown menu */}
+          {showMenu && !isRescanning && (
+            <div className="absolute top-8 right-0 bg-card border border-border rounded-md shadow-lg py-1 min-w-[160px] z-20">
+              {onRescan && movie.file_path && (
+                <button
+                  onClick={handleRescan}
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted flex items-center gap-2"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Rescan File
+                </button>
+              )}
+              {onFixMatch && (
+                <button
+                  onClick={handleFixMatch}
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted flex items-center gap-2"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Fix Match
+                </button>
+              )}
+              {onDismissUpgrade && needsUpgrade && (
+                <button
+                  onClick={handleDismissUpgrade}
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted flex items-center gap-2"
+                >
+                  <EyeOff className="w-3.5 h-3.5" />
+                  Dismiss Upgrade
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }, (prevProps, nextProps) => {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { FixedSizeList as VirtualList } from 'react-window'
-import { Music, Disc3, User, MoreVertical, RefreshCw, X, Pencil, CircleFadingArrowUp, EyeOff } from 'lucide-react'
+import { Music, Disc3, User, MoreVertical, RefreshCw, X, Pencil, CircleFadingArrowUp, EyeOff, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react'
 import { AddToWishlistButton } from '../wishlist/AddToWishlistButton'
 import { useMenuClose } from '../../hooks/useMenuClose'
 import { providerColors } from './mediaUtils'
@@ -112,6 +112,9 @@ export function MusicView({
   const [isAnalyzingAlbum, setIsAnalyzingAlbum] = useState(false)
   const [isAnalyzingArtist, setIsAnalyzingArtist] = useState(false)
   const [showArtistMenu, setShowArtistMenu] = useState(false)
+  const [bioExpanded, setBioExpanded] = useState(false)
+  const [copiedTitle, setCopiedTitle] = useState(false)
+  useEffect(() => { setBioExpanded(false); setCopiedTitle(false) }, [selectedArtist])
   const artistMenuRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!showArtistMenu) return
@@ -400,7 +403,7 @@ export function MusicView({
 
         {/* Album Header */}
         <div className="flex items-start gap-6">
-          <div className="w-48 aspect-square bg-muted rounded-lg overflow-hidden flex-shrink-0 shadow-lg">
+          <div className="w-44 aspect-square bg-muted rounded-lg overflow-hidden flex-shrink-0 shadow-lg shadow-black/30">
             {selectedAlbum.thumb_url ? (
               <img
                 src={selectedAlbum.thumb_url}
@@ -414,7 +417,21 @@ export function MusicView({
             )}
           </div>
           <div className="flex-1">
-            <h2 className="text-2xl font-bold">{selectedAlbum.title}</h2>
+            <div className="flex items-center gap-1.5">
+              <h2 className="text-3xl font-bold">{selectedAlbum.title}</h2>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  navigator.clipboard.writeText(selectedAlbum.title)
+                  setCopiedTitle(true)
+                  setTimeout(() => setCopiedTitle(false), 1500)
+                }}
+                className="flex-shrink-0 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                title="Copy title"
+              >
+                {copiedTitle ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
             <p className="text-lg text-muted-foreground">{selectedAlbum.artist_name}</p>
             {selectedAlbum.year && (
               <p className="text-sm text-muted-foreground mt-1">{selectedAlbum.year}</p>
@@ -455,7 +472,7 @@ export function MusicView({
             <button
               onClick={() => selectedAlbum.id && handleAnalyzeAlbum(selectedAlbum.id)}
               disabled={isAnalyzingAlbum}
-              className="mt-3 flex items-center gap-2 px-3 py-1.5 text-sm bg-foreground text-background hover:bg-foreground/80 rounded-md transition-colors disabled:opacity-50"
+              className="mt-3 flex items-center gap-2 px-3 py-1.5 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${isAnalyzingAlbum ? 'animate-spin' : ''}`} />
               {isAnalyzingAlbum ? 'Analyzing...' : 'Analyze for missing tracks'}
@@ -642,37 +659,37 @@ export function MusicView({
                       }
                     }}
                   >
-                    <span className={`w-8 text-sm text-right ${
-                      track.isMissing ? 'text-muted-foreground/50' : 'text-muted-foreground'
-                    }`}>
-                      {track.track_number || '-'}
-                    </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h4 className={`font-medium truncate ${
+                        <span className={`text-sm font-semibold flex-shrink-0 ${
+                          track.isMissing ? 'text-muted-foreground/50' : 'text-muted-foreground'
+                        }`}>
+                          {track.track_number || '-'}
+                        </span>
+                        <h4 className={`font-semibold truncate ${
                           track.isMissing ? 'text-muted-foreground' : ''
                         }`}>
                           {track.title}
                         </h4>
                       </div>
-                      <div className={`flex items-center gap-3 text-xs mt-0.5 ${
+                      <div className={`flex items-center gap-1 text-xs mt-0.5 ${
                         track.isMissing ? 'text-muted-foreground/50' : 'text-muted-foreground'
                       }`}>
-                        {tierConfig && (
-                          <span
-                            className={`px-1.5 py-0.5 text-xs font-bold rounded ${tierConfig.class}`}
-                            title={tierConfig.title}
-                          >
-                            {tierConfig.label}
-                          </span>
+                        <span>
+                          {[
+                            track.duration_ms ? `${Math.floor(track.duration_ms / 60000)}:${String(Math.floor((track.duration_ms % 60000) / 1000)).padStart(2, '0')}` : null,
+                            !track.isMissing && track.codec ? track.codec.toUpperCase() : null,
+                            !track.isMissing && track.bitrate ? `${Math.round(track.bitrate)} kbps` : null,
+                            !track.isMissing && track.sample_rate ? (track.sample_rate >= 1000 ? `${(track.sample_rate / 1000).toFixed(1)}kHz` : `${track.sample_rate}Hz`) : null,
+                            !track.isMissing && track.bit_depth ? `${track.bit_depth}-bit` : null,
+                          ].filter(Boolean).join(' • ')}
+                        </span>
+                        {tierConfig && qualityTier === 'low' && (
+                          <>
+                            <span>•</span>
+                            <CircleFadingArrowUp className="w-4 h-4 text-red-500 flex-shrink-0" title={tierConfig.title} />
+                          </>
                         )}
-                        {track.duration_ms && (
-                          <span>{Math.floor(track.duration_ms / 60000)}:{String(Math.floor((track.duration_ms % 60000) / 1000)).padStart(2, '0')}</span>
-                        )}
-                        {!track.isMissing && track.codec && <span className="uppercase">{track.codec}</span>}
-                        {!track.isMissing && !!track.bitrate && <span>{Math.round(track.bitrate)} kbps</span>}
-                        {!track.isMissing && !!track.sample_rate && <span>{track.sample_rate >= 1000 ? `${(track.sample_rate / 1000).toFixed(1)}kHz` : `${track.sample_rate}Hz`}</span>}
-                        {!track.isMissing && !!track.bit_depth && <span>{track.bit_depth}-bit</span>}
                       </div>
                     </div>
                     {/* 3-dot menu for owned tracks with file_path */}
@@ -683,12 +700,12 @@ export function MusicView({
                             e.stopPropagation()
                             setTrackMenuOpen(trackMenuOpen === track.id ? null : track.id)
                           }}
-                          className="w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
                         >
                           {rescanningTrackId === track.id ? (
-                            <RefreshCw className="w-3.5 h-3.5 text-white animate-spin" />
+                            <RefreshCw className="w-4 h-4 animate-spin" />
                           ) : (
-                            <MoreVertical className="w-3.5 h-3.5 text-white" />
+                            <MoreVertical className="w-4 h-4" />
                           )}
                         </button>
                         {trackMenuOpen === track.id && rescanningTrackId !== track.id && (
@@ -932,9 +949,10 @@ export function MusicView({
           Back to Artists
         </button>
 
-        {/* Artist Header — matches TV show layout */}
-        <div className="flex gap-4 mb-6 h-32">
-          <div className="w-32 aspect-square bg-muted rounded-lg overflow-hidden flex-shrink-0 shadow-lg shadow-black/30">
+        {/* Artist Header */}
+        <div className="flex gap-6 mb-6">
+          {/* Artist Image — larger, prominent */}
+          <div className="w-44 h-44 bg-muted rounded-lg overflow-hidden flex-shrink-0 shadow-lg shadow-black/30">
             {selectedArtist.thumb_url ? (
               <img
                 src={selectedArtist.thumb_url}
@@ -943,65 +961,96 @@ export function MusicView({
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <User className="w-16 h-16 text-muted-foreground" />
+                <User className="w-20 h-20 text-muted-foreground" />
               </div>
             )}
           </div>
-          <div className="flex-1 min-w-0 overflow-hidden">
-            <div className="flex items-start gap-4 h-full">
-              {/* Title & Stats */}
-              <div className="flex-shrink-0">
-                <h3 className="text-2xl font-bold mb-1">{selectedArtist.name}</h3>
-                <p className="text-muted-foreground text-sm">
-                  {selectedArtist.album_count} albums • {selectedArtist.track_count} tracks
-                </p>
-                {artistCompleteness.has(selectedArtist.name) && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {artistCompleteness.get(selectedArtist.name)!.owned_albums} of {artistCompleteness.get(selectedArtist.name)!.total_albums} albums in discography
-                  </p>
-                )}
-              </div>
 
-              {/* Biography — fills middle, scrolls within fixed header height */}
-              {selectedArtist.biography && (
-                <div className="flex-1 min-w-0 self-stretch overflow-hidden">
-                  <p className="text-sm text-muted-foreground overflow-y-auto h-full leading-relaxed">
-                    {selectedArtist.biography}
-                  </p>
-                </div>
-              )}
-
-              {/* 3-dot menu */}
-              <div ref={artistMenuRef} className="relative flex-shrink-0">
-                <button
-                  onClick={() => setShowArtistMenu(!showArtistMenu)}
-                  className="p-1.5 text-muted-foreground hover:text-foreground"
-                >
-                  <MoreVertical className="w-5 h-5" />
-                </button>
-                {showArtistMenu && (
-                  <div className="absolute top-8 right-0 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[180px] z-50">
-                    <button
-                      onClick={() => { handleAnalyzeArtist(selectedArtist.id); setShowArtistMenu(false) }}
-                      disabled={isAnalyzingArtist}
-                      className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted flex items-center gap-2 disabled:opacity-50"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzingArtist ? 'animate-spin' : ''}`} />
-                      {isAnalyzingArtist ? 'Analyzing...' : 'Analyze Completeness'}
-                    </button>
-                    {onFixArtistMatch && (
-                      <button
-                        onClick={() => { onFixArtistMatch(selectedArtist.id, selectedArtist.name); setShowArtistMenu(false) }}
-                        className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted flex items-center gap-2"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                        Fix Match
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            {/* Title */}
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-3xl font-bold">{selectedArtist.name}</h3>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  navigator.clipboard.writeText(selectedArtist.name)
+                  setCopiedTitle(true)
+                  setTimeout(() => setCopiedTitle(false), 1500)
+                }}
+                className="flex-shrink-0 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                title="Copy title"
+              >
+                {copiedTitle ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+              </button>
             </div>
+
+            {/* Metadata line */}
+            <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+              {selectedArtist.country && (
+                <>
+                  <span>{selectedArtist.country}</span>
+                  <span>•</span>
+                </>
+              )}
+              {selectedArtist.genres && (
+                <>
+                  <span>{(() => { try { const g = JSON.parse(selectedArtist.genres); return Array.isArray(g) ? g.join(', ') : selectedArtist.genres } catch { return selectedArtist.genres } })()}</span>
+                  <span>•</span>
+                </>
+              )}
+              <span>{selectedArtist.album_count} albums</span>
+              <span>•</span>
+              <span>{selectedArtist.track_count} tracks</span>
+            </div>
+
+            {/* Completeness */}
+            {artistCompleteness.has(selectedArtist.name) && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {artistCompleteness.get(selectedArtist.name)!.owned_albums} of {artistCompleteness.get(selectedArtist.name)!.total_albums} albums in discography
+              </p>
+            )}
+
+            {/* Action buttons row */}
+            <div className="flex items-center gap-3 mt-3" ref={artistMenuRef}>
+              <button
+                onClick={() => { handleAnalyzeArtist(selectedArtist.id) }}
+                disabled={isAnalyzingArtist}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+                title="Analyze Completeness"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzingArtist ? 'animate-spin' : ''}`} />
+                {isAnalyzingArtist ? 'Analyzing...' : 'Analyze Completeness'}
+              </button>
+              {onFixArtistMatch && (
+                <button
+                  onClick={() => onFixArtistMatch(selectedArtist.id, selectedArtist.name)}
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                  title="Fix Match"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Biography */}
+            {selectedArtist.biography && (
+              <div className="mt-3 max-w-2xl">
+                <p className={`text-sm text-muted-foreground leading-relaxed ${bioExpanded ? '' : 'line-clamp-3'}`}>
+                  {selectedArtist.biography}
+                </p>
+                <button
+                  onClick={() => setBioExpanded(!bioExpanded)}
+                  className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 mt-1 transition-colors"
+                >
+                  {bioExpanded ? (
+                    <><span>Less</span><ChevronUp className="w-4 h-4" /></>
+                  ) : (
+                    <><span>More</span><ChevronDown className="w-4 h-4" /></>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1686,11 +1735,8 @@ const ArtistCard = memo(({ artist, onClick, showSourceBadge, onFixMatch, onAnaly
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const menuRef = useMenuClose({ isOpen: showMenu, onClose: useCallback(() => setShowMenu(false), []) })
 
-  // Check if this is a local source that can have match fixed
-  const isLocalSource = artist.source_type === 'kodi-local' || artist.source_type === 'local'
-
   // Show menu if any action is available
-  const hasMenuActions = (isLocalSource && onFixMatch) || onAnalyzeCompleteness
+  const hasMenuActions = onFixMatch || onAnalyzeCompleteness
 
   const handleFixMatch = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -1734,7 +1780,7 @@ const ArtistCard = memo(({ artist, onClick, showSourceBadge, onFixMatch, onAnaly
 
             {/* Dropdown menu */}
             {showMenu && (
-              <div className="absolute top-8 left-0 bg-card border border-border rounded-md shadow-lg py-1 min-w-[180px]">
+              <div className="absolute top-8 left-0 bg-card border border-border rounded-md shadow-lg py-1 min-w-[160px]">
                 {onAnalyzeCompleteness && (
                   <button
                     onClick={handleAnalyzeCompleteness}
@@ -1745,7 +1791,7 @@ const ArtistCard = memo(({ artist, onClick, showSourceBadge, onFixMatch, onAnaly
                     {isAnalyzing ? 'Analyzing...' : 'Analyze Completeness'}
                   </button>
                 )}
-                {isLocalSource && onFixMatch && (
+                {onFixMatch && (
                   <button
                     onClick={handleFixMatch}
                     className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted flex items-center gap-2"
@@ -1840,7 +1886,7 @@ const AlbumCard = memo(({ album, onClick, showArtist = true, showSourceBadge, on
           <div ref={menuRef} className="absolute top-2 left-2 z-20">
             <button
               onClick={handleMenuClick}
-              className={`p-1 rounded-full bg-black/60 text-white transition-opacity ${
+              className={`w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white transition-opacity ${
                 showMenu ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
               } hover:bg-black/80`}
             >
@@ -1853,7 +1899,7 @@ const AlbumCard = memo(({ album, onClick, showArtist = true, showSourceBadge, on
 
             {/* Dropdown menu */}
             {showMenu && (
-              <div className="absolute top-8 left-0 bg-card border border-border rounded-md shadow-lg py-1 min-w-[180px] z-30">
+              <div className="absolute top-8 left-0 bg-card border border-border rounded-md shadow-lg py-1 min-w-[160px] z-30">
                 <button
                   onClick={handleAnalyze}
                   disabled={isAnalyzing}
@@ -1952,11 +1998,8 @@ const ArtistListItem = memo(({ artist, completeness, onClick, showSourceBadge, o
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const menuRef = useMenuClose({ isOpen: showMenu, onClose: useCallback(() => setShowMenu(false), []) })
 
-  // Check if this is a local source that can have match fixed
-  const isLocalSource = artist.source_type === 'kodi-local' || artist.source_type === 'local'
-
   // Show menu if any action is available
-  const hasMenuActions = (isLocalSource && onFixMatch) || onAnalyzeCompleteness
+  const hasMenuActions = onFixMatch || onAnalyzeCompleteness
 
   const handleFixMatch = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -1981,7 +2024,7 @@ const ArtistListItem = memo(({ artist, completeness, onClick, showSourceBadge, o
 
   return (
     <div
-      className="group cursor-pointer rounded-md overflow-hidden bg-muted/20 hover:bg-muted/40 transition-all duration-200 p-4 flex gap-4 items-center"
+      className="group cursor-pointer rounded-md bg-muted/20 hover:bg-muted/40 transition-all duration-200 p-4 flex gap-4 items-center"
       onClick={onClick}
     >
       {/* Artist Thumbnail */}
@@ -1999,45 +2042,6 @@ const ArtistListItem = memo(({ artist, completeness, onClick, showSourceBadge, o
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <User className="w-8 h-8 text-muted-foreground" />
-          </div>
-        )}
-        {/* 3-dot menu button */}
-        {hasMenuActions && (
-          <div ref={menuRef} className="absolute top-0 left-0 z-20">
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowMenu(!showMenu)
-              }}
-              className="w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <MoreVertical className="w-3 h-3" />
-            </button>
-
-            {/* Dropdown menu */}
-            {showMenu && (
-              <div className="absolute top-7 left-0 bg-card border border-border rounded-md shadow-lg py-1 min-w-[180px]">
-                {onAnalyzeCompleteness && (
-                  <button
-                    onClick={handleAnalyzeCompleteness}
-                    disabled={isAnalyzing}
-                    className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted flex items-center gap-2 disabled:opacity-50"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
-                    {isAnalyzing ? 'Analyzing...' : 'Analyze Completeness'}
-                  </button>
-                )}
-                {isLocalSource && onFixMatch && (
-                  <button
-                    onClick={handleFixMatch}
-                    className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted flex items-center gap-2"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                    Fix Match
-                  </button>
-                )}
-              </div>
-            )}
           </div>
         )}
         {/* Source badge */}
@@ -2064,6 +2068,46 @@ const ArtistListItem = memo(({ artist, completeness, onClick, showSourceBadge, o
           </div>
         )}
       </div>
+
+      {/* 3-dot menu */}
+      {hasMenuActions && (
+        <div ref={menuRef} className="relative flex-shrink-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowMenu(!showMenu)
+            }}
+            className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+
+          {/* Dropdown menu */}
+          {showMenu && (
+            <div className="absolute top-8 right-0 bg-card border border-border rounded-md shadow-lg py-1 min-w-[160px] z-20">
+              {onAnalyzeCompleteness && (
+                <button
+                  onClick={handleAnalyzeCompleteness}
+                  disabled={isAnalyzing}
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted flex items-center gap-2 disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
+                  {isAnalyzing ? 'Analyzing...' : 'Analyze Completeness'}
+                </button>
+              )}
+              {onFixMatch && (
+                <button
+                  onClick={handleFixMatch}
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted flex items-center gap-2"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Fix Match
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 })
@@ -2083,7 +2127,7 @@ const AlbumListItem = memo(({ album, onClick, showArtist = true, showSourceBadge
 
   return (
     <div
-      className="group cursor-pointer rounded-md overflow-hidden bg-muted/20 hover:bg-muted/40 transition-all duration-200 p-4 flex gap-4 items-center"
+      className="group cursor-pointer rounded-md bg-muted/20 hover:bg-muted/40 transition-all duration-200 p-4 flex gap-4 items-center"
       onClick={onClick}
     >
       {/* Album Thumbnail */}
@@ -2386,14 +2430,13 @@ const MissingAlbumListItem = memo(({ album, artistName, onDismiss }: {
         {album.year && (
           <p className="text-xs text-muted-foreground/70">{album.year}</p>
         )}
-        <div className="mt-2 flex items-center gap-2 flex-wrap">
-          <span className="px-2 py-0.5 text-xs font-medium bg-yellow-600 text-white rounded">Missing</span>
-          {album.album_type !== 'album' && (
+        {album.album_type !== 'album' && (
+          <div className="mt-2">
             <span className="px-2 py-0.5 text-xs font-medium bg-gray-600 text-white rounded capitalize">
               {album.album_type}
             </span>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Wishlist + Dismiss buttons */}

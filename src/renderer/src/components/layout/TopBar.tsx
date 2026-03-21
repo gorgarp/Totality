@@ -8,6 +8,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Search, X, Home, Film, Tv, Music, Library, Star, Settings, RefreshCw, Disc3, User, Bot, ArrowBigLeft } from 'lucide-react'
 import { useSources } from '../../contexts/SourceContext'
 import { useWishlist } from '../../contexts/WishlistContext'
+import { useNavigation } from '../../contexts/NavigationContext'
 import { ActivityPanel } from '../ui/ActivityPanel'
 import logoImage from '../../assets/totality_header_logo.png'
 import type { MediaViewType } from '../library/types'
@@ -63,6 +64,7 @@ export function TopBar({
 }: TopBarProps) {
   const { sources } = useSources()
   const { count: wishlistCount } = useWishlist()
+  const { navigateTo } = useNavigation()
 
   // Theme accent color for alerts
   const [themeAccentColor, setThemeAccentColor] = useState('')
@@ -149,25 +151,37 @@ export function TopBar({
   const flattenedResults = searchResults ? [
     ...searchResults.movies.map(m => ({ type: 'movie' as const, id: m.id })),
     ...searchResults.tvShows.map(s => ({ type: 'tv' as const, id: s.id, title: s.title })),
-    ...searchResults.episodes.map(e => ({ type: 'episode' as const, id: e.id, series_title: e.series_title })),
-    ...searchResults.artists.map(a => ({ type: 'artist' as const, id: a.id })),
+    ...searchResults.episodes.map(e => ({ type: 'episode' as const, id: e.id, series_title: e.series_title, season_number: e.season_number })),
+    ...searchResults.artists.map(a => ({ type: 'artist' as const, id: a.id, name: a.name })),
     ...searchResults.albums.map(a => ({ type: 'album' as const, id: a.id })),
     ...searchResults.tracks.map(t => ({ type: 'track' as const, id: t.id, album_id: t.album_id })),
   ] : []
 
   // Handle result selection
-  const handleResultClick = (type: 'movie' | 'tv' | 'episode' | 'artist' | 'album' | 'track', _id: number, _extra?: { series_title?: string; album_id?: number; title?: string }) => {
+  const handleResultClick = (type: 'movie' | 'tv' | 'episode' | 'artist' | 'album' | 'track', id: number, extra?: { series_title?: string; season_number?: number; album_id?: number; title?: string; name?: string }) => {
     setShowSearchResults(false)
     setSearchInput('')
     setSearchResults(null)
 
-    // Navigate to appropriate library tab
+    // Navigate to appropriate library tab and item
     if (type === 'movie') {
       onNavigateToLibrary('movies')
-    } else if (type === 'tv' || type === 'episode') {
+      navigateTo({ type: 'movie', id })
+    } else if (type === 'tv') {
       onNavigateToLibrary('tv')
-    } else {
+      navigateTo({ type: 'tv', id: extra?.title || String(id) })
+    } else if (type === 'episode') {
+      onNavigateToLibrary('tv')
+      navigateTo({ type: 'episode', id, seriesTitle: extra?.series_title, seasonNumber: extra?.season_number })
+    } else if (type === 'artist') {
       onNavigateToLibrary('music')
+      navigateTo({ type: 'artist', id, artistName: extra?.name })
+    } else if (type === 'album') {
+      onNavigateToLibrary('music')
+      navigateTo({ type: 'album', id })
+    } else if (type === 'track') {
+      onNavigateToLibrary('music')
+      navigateTo({ type: 'track', id, albumId: extra?.album_id })
     }
   }
 
@@ -365,7 +379,7 @@ export function TopBar({
                           return (
                             <button
                               key={`episode-${episode.id}`}
-                              onClick={() => handleResultClick('episode', episode.id, { series_title: episode.series_title })}
+                              onClick={() => handleResultClick('episode', episode.id, { series_title: episode.series_title, season_number: episode.season_number })}
                               className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left ${
                                 searchResultIndex === flatIndex ? 'bg-primary/20' : 'hover:bg-muted/50'
                               }`}
@@ -403,7 +417,7 @@ export function TopBar({
                           return (
                             <button
                               key={`artist-${artist.id}`}
-                              onClick={() => handleResultClick('artist', artist.id)}
+                              onClick={() => handleResultClick('artist', artist.id, { name: artist.name })}
                               className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left ${
                                 searchResultIndex === flatIndex ? 'bg-primary/20' : 'hover:bg-muted/50'
                               }`}
