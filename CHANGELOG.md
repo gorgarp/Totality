@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.2](https://github.com/bbidwell85/totality/compare/v0.2.1...v0.2.2) (2026-03-21)
+
+
+### Features
+
+* major UI consistency overhaul, search navigation, and UX improvements ([a44b04c](https://github.com/bbidwell85/totality/commit/a44b04ce9ad3092f32d14529b28ffea5184d71cd))
+* major UI polish, bug fixes, security audit fixes, and memory optimization ([ce7f1d5](https://github.com/bbidwell85/totality/commit/ce7f1d5cc748181d184aae21a31e2e944da333d3))
+
 ### [0.2.1](https://github.com/bbidwell85/totality/compare/v0.2.0...v0.2.1) (2026-03-18)
 
 
