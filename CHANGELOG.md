@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.3](https://github.com/bbidwell85/totality/compare/v0.2.2...v0.2.3) (2026-03-21)
+
+
+### Bug Fixes
+
+* resolve TypeScript build errors across all platforms ([85aa558](https://github.com/bbidwell85/totality/commit/85aa5582e3f222eceb6123f59a32c8fa9a3878df))
+
 ### [0.2.2](https://github.com/bbidwell85/totality/compare/v0.2.1...v0.2.2) (2026-03-21)
 
 
