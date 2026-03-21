@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react'
-import { RefreshCw, MoreVertical, Pencil, X, Folder, CircleFadingArrowUp, EyeOff, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react'
-import { QualityBadges } from './QualityBadges'
+import { RefreshCw, MoreVertical, Pencil, Folder, CircleFadingArrowUp, EyeOff, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react'
 import { TvPlaceholder, EpisodePlaceholder } from '../ui/MediaPlaceholders'
 import { MissingItemCard } from './MissingItemCard'
 import { useMenuClose } from '../../hooks/useMenuClose'
@@ -222,7 +221,7 @@ const EpisodeRow = memo(({ episode, onClick, onRescan, onDismissUpgrade }: {
           {needsUpgrade && (
             <>
               <span>•</span>
-              <CircleFadingArrowUp className="w-4 h-4 text-red-500 flex-shrink-0" title="Quality upgrade recommended" />
+              <span title="Quality upgrade recommended"><CircleFadingArrowUp className="w-4 h-4 text-red-500 flex-shrink-0" /></span>
             </>
           )}
         </div>
@@ -581,7 +580,7 @@ export function TVShowsView({
             {/* Action buttons row */}
             <div className="flex items-center gap-3 mt-3" ref={showDetailMenuRef}>
               <button
-                onClick={() => onAnalyzeSeries(selectedShow)}
+                onClick={() => selectedShow && onAnalyzeSeries(selectedShow)}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                 title="Analyze Series"
               >
@@ -590,7 +589,7 @@ export function TVShowsView({
               </button>
               {onFixMatch && (
                 <button
-                  onClick={() => onFixMatch(selectedShow)}
+                  onClick={() => selectedShow && onFixMatch(selectedShow, '', undefined)}
                   className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
                   title="Fix Match"
                 >

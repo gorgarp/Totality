@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react'
 import { Layers, RefreshCw, MoreVertical, Pencil, CircleFadingArrowUp, EyeOff } from 'lucide-react'
-import { QualityBadges } from './QualityBadges'
 import { MoviePlaceholder } from '../ui/MediaPlaceholders'
 import { useMenuClose } from '../../hooks/useMenuClose'
 import { providerColors } from './mediaUtils'
@@ -627,7 +626,7 @@ const MovieListItem = memo(({ movie, onClick, showSourceBadge, collectionData, o
           {needsUpgrade && (
             <>
               <span>•</span>
-              <CircleFadingArrowUp className="w-4 h-4 text-red-500 flex-shrink-0" title="Quality upgrade recommended" />
+              <span title="Quality upgrade recommended"><CircleFadingArrowUp className="w-4 h-4 text-red-500 flex-shrink-0" /></span>
             </>
           )}
           {collectionData && (

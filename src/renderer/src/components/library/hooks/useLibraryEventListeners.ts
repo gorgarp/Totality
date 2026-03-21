@@ -36,9 +36,9 @@ interface UseLibraryEventListenersOptions {
  */
 export function useLibraryEventListeners({
   activeSourceId,
-  scanProgressSize,
-  loadMedia,
-  loadStats,
+  scanProgressSize: _scanProgressSize,
+  loadMedia: _loadMedia,
+  loadStats: _loadStats,
   loadCompletenessData,
   loadMusicData,
   loadMusicCompletenessData,

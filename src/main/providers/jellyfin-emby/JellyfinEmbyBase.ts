@@ -87,6 +87,7 @@ export interface JellyfinMediaItem {
   ParentIndexNumber?: number
   IndexNumber?: number
   Path?: string
+  Overview?: string
   MediaSources?: JellyfinMediaSource[]
   ProviderIds?: {
     Imdb?: string

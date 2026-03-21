@@ -4,9 +4,10 @@ import { useWishlist, WishlistMediaType, WishlistPriority, WishlistReason, Wishl
 import { WishlistItemCard } from './WishlistItemCard'
 import { WishlistEmptyState } from './WishlistEmptyState'
 
-interface WishlistPanelProps {
+export interface WishlistPanelProps {
   isOpen: boolean
   onClose: () => void
+  onOpenAIAdvice?: () => void
 }
 
 type SortOption = 'priority' | 'added_at' | 'title' | 'year' | 'completed_at'

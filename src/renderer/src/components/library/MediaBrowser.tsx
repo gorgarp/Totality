@@ -873,13 +873,13 @@ export function MediaBrowser({
       ])
 
       // Build exclusion lookup set (by musicbrainz_id stored as ref_key)
-      const excludedAlbumIds = new Set(albumExclusions.map(e => e.ref_key))
+      const excludedAlbumIds = new Set(albumExclusions.map((e: { reference_key: string | null }) => e.reference_key ?? null))
 
       // Filter excluded albums from missing lists
       const filterMissingJson = (json: string | undefined): string => {
         try {
           const parsed = JSON.parse(json || '[]') as Array<{ musicbrainz_id?: string }>
-          return JSON.stringify(parsed.filter(item => !excludedAlbumIds.has(item.musicbrainz_id)))
+          return JSON.stringify(parsed.filter(item => !excludedAlbumIds.has(item.musicbrainz_id ?? null)))
         } catch { return json || '[]' }
       }
 

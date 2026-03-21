@@ -29,6 +29,8 @@ interface ToastOptions {
   type: 'success' | 'error' | 'info'
   title: string
   message: string
+  duration?: number
+  action?: { label: string; onClick: () => void }
 }
 
 interface UseDismissHandlersOptions {

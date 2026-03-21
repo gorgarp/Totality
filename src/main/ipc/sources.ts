@@ -64,7 +64,7 @@ export function registerSourceHandlers(): void {
   ipcMain.handle('sources:add', async (_event, config: unknown) => {
     try {
       const validatedConfig = validateInput(AddSourceSchema, config, 'sources:add')
-      console.log('[IPC sources:add] Adding source:', validatedConfig.display_name, `(${validatedConfig.source_type})`)
+      console.log('[IPC sources:add] Adding source:', validatedConfig.displayName, `(${validatedConfig.sourceType})`)
       return await manager.addSource(validatedConfig)
     } catch (error: unknown) {
       console.error('Error adding source:', error)

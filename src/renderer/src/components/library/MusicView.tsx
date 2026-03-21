@@ -687,7 +687,7 @@ export function MusicView({
                         {tierConfig && qualityTier === 'low' && (
                           <>
                             <span>•</span>
-                            <CircleFadingArrowUp className="w-4 h-4 text-red-500 flex-shrink-0" title={tierConfig.title} />
+                            <span title={tierConfig.title}><CircleFadingArrowUp className="w-4 h-4 text-red-500 flex-shrink-0" /></span>
                           </>
                         )}
                       </div>
@@ -1486,8 +1486,8 @@ export function MusicView({
                 }}) => {
                   const track = data.tracks[index]
                   // Use denormalized fields directly — maps may not have all entries loaded
-                  const artistName = track.artist_name || (track.artist_id ? data.artistNameMap.get(track.artist_id) : undefined)
-                  const albumTitle = track.album_name || (track.album_id ? data.albumInfoMap.get(track.album_id)?.title : undefined)
+                  const artistName = track.artist_id ? data.artistNameMap.get(track.artist_id) : undefined
+                  const albumTitle = track.album_id ? data.albumInfoMap.get(track.album_id)?.title : undefined
                   return (
                     <div style={style}>
                       <TrackListItem
