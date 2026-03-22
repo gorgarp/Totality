@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/bbidwell85/totality/compare/v0.2.3...v0.3.0) (2026-03-22)
+
+
+### Features
+
+* major dependency upgrades — Electron 41, Vite 6, ESLint 9 ([22f4eda](https://github.com/bbidwell85/totality/commit/22f4edaf8e0ece79856126bd4a265817c184547d))
+* migrate to Tailwind CSS 4 and fix library scrollbar styling ([b757501](https://github.com/bbidwell85/totality/commit/b7575017c8e1d8b7380a842ba800618aaf14e916))
+* quality scoring overhaul, preference persistence, and UI improvements ([56a3343](https://github.com/bbidwell85/totality/commit/56a3343b31fe87754b09122366ca887be6363edb))
+
 ### [0.2.3](https://github.com/bbidwell85/totality/compare/v0.2.2...v0.2.3) (2026-03-21)
 
 
